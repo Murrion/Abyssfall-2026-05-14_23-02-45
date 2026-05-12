@@ -1,0 +1,38 @@
+{
+    "asset": "d1517b45131b4bd4b9cdc59c7ec91fd0",
+    "fileName": "019e1995-9642-7139-bd24-9ef1644892e1.png",
+    "prompt": "A horizontal, rectangular UI stamina bar fill texture. Yellowish-green or golden color with a subtle energy or liquid texture, in the same art style as the red fill in the provided reference image. Darker edges, slight glow. 1024x256 resolution.",
+    "negativePrompt": "",
+    "model": "gemini-3.0-pro",
+    "modelName": "Gemini 3.0 Pro",
+    "customSeed": -1,
+    "w3CTraceId": "",
+    "feedback": 0,
+    "refinementMode": "Generation",
+    "pixelateTargetSize": 0,
+    "pixelateKeepImageSize": false,
+    "pixelatePixelBlockSize": 0,
+    "pixelatePixelGridSize": 0,
+    "pixelateMode": 0,
+    "pixelateOutlineThickness": 0,
+    "doodles": {
+        "m_Items": [
+            {
+                "doodleReferenceType": 7,
+                "doodle": [],
+                "label": "Image",
+                "strength": 0.25,
+                "invertStrength": false,
+                "assetReferenceGuid": "93c71507dc5c1ad44831beedc5c58fe7",
+                "unlabeledIndex": -1
+            }
+        ]
+    },
+    "upscaleFactor": 0,
+    "dimensions": {
+        "width": 1024,
+        "height": 1024
+    },
+    "spriteSheet": false,
+    "duration": 0.0
+}

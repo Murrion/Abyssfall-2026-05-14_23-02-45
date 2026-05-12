@@ -1,0 +1,23 @@
+{
+    "asset": "a38e0827a734a8246921d35da872bfe8",
+    "fileName": "019e19d4-e643-74f7-96eb-978d8032fc85.glb",
+    "prompt": "A thick, twisted gothic tree with green glowing core, matching the reference style. Variation 3.",
+    "negativePrompt": "",
+    "model": "model3d-tripo-p1",
+    "modelName": "Tripo P1",
+    "customSeed": -1,
+    "w3CTraceId": "",
+    "feedback": 0,
+    "refinementMode": "Generation",
+    "promptImageReferenceGuid": "c527575076407444a88c64ef80c256a8",
+    "modelReferenceGuid": "",
+    "multiviewFrontGuid": "",
+    "multiviewBackGuid": "",
+    "multiviewLeftGuid": "",
+    "multiviewRightGuid": "",
+    "multiviewTopGuid": "",
+    "multiviewBottomGuid": "",
+    "multiviewLeftFrontGuid": "",
+    "multiviewRightFrontGuid": "",
+    "faceLimit": -1
+}

@@ -1,0 +1,38 @@
+{
+    "asset": "5bba810ea5dc25a428404577333b8fde",
+    "fileName": "019e1995-61fa-73e3-aac9-b268fe85ff32.png",
+    "prompt": "A long, horizontal, gothic stone UI frame for a health bar. The style is dark, medieval, and textured like weathered stone. It has pointed, decorative ends with intricate carvings. The center is empty (transparent or white background) where the fill would go. Matching the art style of the provided reference image. High detail, pixel art aesthetic but smooth textures.",
+    "negativePrompt": "",
+    "model": "gemini-3.0-pro",
+    "modelName": "Gemini 3.0 Pro",
+    "customSeed": -1,
+    "w3CTraceId": "",
+    "feedback": 0,
+    "refinementMode": "Generation",
+    "pixelateTargetSize": 0,
+    "pixelateKeepImageSize": false,
+    "pixelatePixelBlockSize": 0,
+    "pixelatePixelGridSize": 0,
+    "pixelateMode": 0,
+    "pixelateOutlineThickness": 0,
+    "doodles": {
+        "m_Items": [
+            {
+                "doodleReferenceType": 7,
+                "doodle": [],
+                "label": "Image",
+                "strength": 0.25,
+                "invertStrength": false,
+                "assetReferenceGuid": "93c71507dc5c1ad44831beedc5c58fe7",
+                "unlabeledIndex": -1
+            }
+        ]
+    },
+    "upscaleFactor": 0,
+    "dimensions": {
+        "width": 1024,
+        "height": 1024
+    },
+    "spriteSheet": false,
+    "duration": 0.0
+}
