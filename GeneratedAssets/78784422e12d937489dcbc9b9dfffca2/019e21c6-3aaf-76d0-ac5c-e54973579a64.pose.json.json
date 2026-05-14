@@ -1,0 +1,12 @@
+{
+    "asset": "78784422e12d937489dcbc9b9dfffca2",
+    "fileName": "019e21c6-3aaf-76d0-ac5c-e54973579a64.pose.json",
+    "prompt": "Humanoid block pose, arms raised to guard chest, upper body lean forward slightly, hold position.",
+    "negativePrompt": "",
+    "model": "unity-text-to-motion",
+    "modelName": "Text to Motion",
+    "customSeed": 47126384,
+    "w3CTraceId": "",
+    "feedback": 0,
+    "isTrimmed": false
+}

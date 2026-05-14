@@ -1,0 +1,12 @@
+{
+    "asset": "a51509cc35061bd499a882114f86703e",
+    "fileName": "019e21c6-111e-72ad-ab69-8f45cbad5a0c.pose.json",
+    "prompt": "Humanoid melee attack, right arm horizontal swing, wind up, strike, recovery.",
+    "negativePrompt": "",
+    "model": "unity-text-to-motion",
+    "modelName": "Text to Motion",
+    "customSeed": 990130455,
+    "w3CTraceId": "",
+    "feedback": 0,
+    "isTrimmed": false
+}

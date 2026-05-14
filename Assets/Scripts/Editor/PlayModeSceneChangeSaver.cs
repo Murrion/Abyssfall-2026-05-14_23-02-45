@@ -339,7 +339,8 @@ public static class PlayModeSceneChangeSaver
                 property.intValue = field.IntValue;
                 break;
             case SerializedPropertyType.Enum:
-                property.enumValueIndex = field.IntValue;
+                if (field.IntValue >= 0 && field.IntValue < property.enumNames.Length)
+                    property.enumValueIndex = field.IntValue;
                 break;
             case SerializedPropertyType.Boolean:
                 property.boolValue = field.BoolValue;

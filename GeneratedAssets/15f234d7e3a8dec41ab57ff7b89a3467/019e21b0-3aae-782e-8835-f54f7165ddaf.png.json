@@ -1,0 +1,28 @@
+{
+    "asset": "15f234d7e3a8dec41ab57ff7b89a3467",
+    "fileName": "019e21b0-3aae-782e-8835-f54f7165ddaf.png",
+    "prompt": "Character concept art for a 3D model, front view, T-pose, neutral lighting, black background. A dark fantasy humanoid enemy character, heavy build, broad shoulders, no visible neck. Wearing rusted iron armor with cracked leather details. Dark grey and brown color palette, cold blue rim light. Low poly style, flat shading, souls-like dark aesthetic. Consistent with a gothic dark forest environment.",
+    "negativePrompt": "",
+    "model": "gemini-3.0-pro",
+    "modelName": "Gemini 3.0 Pro",
+    "customSeed": -1,
+    "w3CTraceId": "",
+    "feedback": 0,
+    "refinementMode": "Generation",
+    "pixelateTargetSize": 0,
+    "pixelateKeepImageSize": false,
+    "pixelatePixelBlockSize": 0,
+    "pixelatePixelGridSize": 0,
+    "pixelateMode": 0,
+    "pixelateOutlineThickness": 0,
+    "doodles": {
+        "m_Items": []
+    },
+    "upscaleFactor": 0,
+    "dimensions": {
+        "width": 1024,
+        "height": 1024
+    },
+    "spriteSheet": false,
+    "duration": 0.0
+}

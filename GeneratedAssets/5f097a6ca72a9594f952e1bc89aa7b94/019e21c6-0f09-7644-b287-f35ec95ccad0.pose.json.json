@@ -1,0 +1,12 @@
+{
+    "asset": "5f097a6ca72a9594f952e1bc89aa7b94",
+    "fileName": "019e21c6-0f09-7644-b287-f35ec95ccad0.pose.json",
+    "prompt": "Humanoid walk cycle, heavy melee enemy, slow deliberate steps, slight forward lean, arms hanging low, loopable.",
+    "negativePrompt": "",
+    "model": "unity-text-to-motion",
+    "modelName": "Text to Motion",
+    "customSeed": 611367512,
+    "w3CTraceId": "",
+    "feedback": 0,
+    "isTrimmed": false
+}

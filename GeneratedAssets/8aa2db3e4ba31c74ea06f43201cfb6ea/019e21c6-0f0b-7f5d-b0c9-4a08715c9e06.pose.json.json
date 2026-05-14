@@ -1,0 +1,12 @@
+{
+    "asset": "8aa2db3e4ba31c74ea06f43201cfb6ea",
+    "fileName": "019e21c6-0f0b-7f5d-b0c9-4a08715c9e06.pose.json",
+    "prompt": "Humanoid idle animation, heavy melee enemy, slow weight shift left to right, subtle breathing, feet planted, threatening neutral stance, loopable.",
+    "negativePrompt": "",
+    "model": "unity-text-to-motion",
+    "modelName": "Text to Motion",
+    "customSeed": 181744615,
+    "w3CTraceId": "",
+    "feedback": 0,
+    "isTrimmed": false
+}

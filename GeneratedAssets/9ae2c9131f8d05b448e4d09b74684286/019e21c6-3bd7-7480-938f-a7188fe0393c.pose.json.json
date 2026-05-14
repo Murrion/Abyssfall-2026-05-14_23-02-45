@@ -1,0 +1,12 @@
+{
+    "asset": "9ae2c9131f8d05b448e4d09b74684286",
+    "fileName": "019e21c6-3bd7-7480-938f-a7188fe0393c.pose.json",
+    "prompt": "Humanoid death, heavy body collapses forward, knees first then full fall.",
+    "negativePrompt": "",
+    "model": "unity-text-to-motion",
+    "modelName": "Text to Motion",
+    "customSeed": 16948896,
+    "w3CTraceId": "",
+    "feedback": 0,
+    "isTrimmed": false
+}

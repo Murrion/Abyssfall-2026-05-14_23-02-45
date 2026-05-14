@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(Get-ChildItem -Path \"C:\\\\Users\\\\SvatT\\\\Abyssfall\\\\Assets\" -Directory)",
+      "Bash(Select-Object Name)",
+      "PowerShell(Get-ChildItem -Path \"C:\\\\Users\\\\SvatT\\\\Abyssfall\\\\Assets\" -Directory | ForEach-Object { $_.Name })"
+    ]
+  }
+}
