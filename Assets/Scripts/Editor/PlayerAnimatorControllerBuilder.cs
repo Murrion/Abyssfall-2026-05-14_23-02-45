@@ -34,7 +34,7 @@ public static class PlayerAnimatorControllerBuilder
         };
     }
 
-    [MenuItem("Tools/Abyssfall/Setup Player Animations In Base Scene")]
+    [MenuItem("Tools/Abyssfall/Player/Setup Animations In Base Scene")]
     public static void SetupBaseScene()
     {
         EditorSceneManager.OpenScene(BaseScenePath);
@@ -43,7 +43,7 @@ public static class PlayerAnimatorControllerBuilder
         EditorSceneManager.SaveOpenScenes();
     }
 
-    [MenuItem("Tools/Abyssfall/Rebuild Player Animator Controller")]
+    [MenuItem("Tools/Abyssfall/Player/Rebuild Animator Controller")]
     public static void RebuildController()
     {
         foreach (EditorWindow w in Resources.FindObjectsOfTypeAll<EditorWindow>())
@@ -166,7 +166,7 @@ public static class PlayerAnimatorControllerBuilder
         AssignControllerToPlayersInOpenScenes();
     }
 
-    [MenuItem("Tools/Abyssfall/Assign Player Animator Controller To Selection")]
+    [MenuItem("Tools/Abyssfall/Player/Assign To Selection")]
     public static void AssignControllerToSelection()
     {
         AnimatorController controller = GetOrCreateController();
@@ -184,7 +184,7 @@ public static class PlayerAnimatorControllerBuilder
         Debug.Log($"Assigned {ControllerPath} to {animator.name}.");
     }
 
-    [MenuItem("Tools/Abyssfall/Assign Player Animator Controller To All Players")]
+    [MenuItem("Tools/Abyssfall/Player/Assign To All Players")]
     public static void AssignControllerToPlayersInOpenScenes()
     {
         AnimatorController controller = GetOrCreateController();

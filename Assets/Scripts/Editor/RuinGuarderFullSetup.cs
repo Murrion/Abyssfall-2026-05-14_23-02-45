@@ -1,4 +1,5 @@
-﻿using System.Linq;
+using System.IO;
+using System.Linq;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
@@ -6,84 +7,112 @@ using UnityEngine.AI;
 
 public static class RuinGuarderFullSetup
 {
-    private const string FbxPath        = "Assets/Models/Enemies/RuinGuarder.fbx";
-    private const string MatPath        = "Assets/Models/Enemies/tripo_material_ca54182f-46a4-43b2-9b21-131967386d23.mat";
-    private const string ControllerPath = "Assets/Animations/RuinGuarder/RuinGuarder.controller";
-    private const string PrefabPath     = "Assets/Models/Enemies/RuinGuarder_Prefab.prefab";
+    // ── Paths ─────────────────────────────────────────────────────────
+    private const string FbxPath        = "Assets/Data/Enemies/RuinGuarder/RuinGuarder.fbx";
+    private const string MatPath        = "Assets/Data/Enemies/RuinGuarder/tripo_material_ca54182f-46a4-43b2-9b21-131967386d23.mat";
+    private const string ControllerPath = "Assets/Data/Enemies/RuinGuarder/RuinGuarder.controller";
+    private const string PrefabPath     = "Assets/Data/Enemies/RuinGuarder/RuinGuarder_Prefab.prefab";
+    private const string DataPath       = "Assets/Data/Enemies/RuinGuarder/RuinGuarderData.asset";
+    private const string RootName       = "RuinGuarder";
 
-    [MenuItem("Tools/Abyssfall/Setup RuinGuarder — Full Reset")]
+    [MenuItem("Tools/Abyssfall/Enemies/RuinGuarder/Setup — Full Reset")]
     public static void Run()
     {
-        // Reimport FBX — forces avatar auto-generation
-        AssetDatabase.ImportAsset(FbxPath, ImportAssetOptions.ForceUpdate);
-        AssetDatabase.Refresh();
+        // Clear Inspector selection before any destruction to prevent MissingReferenceException.
+        Selection.objects = System.Array.Empty<Object>();
 
-        // Check avatar
+        // Read avatar from FBX as-is — user configures Rig settings manually and clicks Apply.
         Avatar avatar = AssetDatabase.LoadAllAssetsAtPath(FbxPath)
             .OfType<Avatar>()
             .FirstOrDefault();
 
         if (avatar == null)
-            Debug.LogError("[RuinGuarder] FBX has no Avatar asset. Open: Models/Enemies/RuinGuarder.fbx → Inspector → Rig → Animation Type: Humanoid → Apply.");
-        else if (!avatar.isValid)
-            Debug.LogError("[RuinGuarder] Avatar invalid — bone mapping failed. Open FBX Inspector → Rig → Configure Avatar → fix bone assignments manually.");
-        else if (!avatar.isHuman)
-            Debug.LogWarning("[RuinGuarder] Avatar is not Humanoid — animations may not play correctly.");
+            Debug.LogWarning("[RuinGuarder] No Avatar found — set FBX Rig to Generic and click Apply first.");
         else
-            Debug.Log("[RuinGuarder] Avatar OK: isHuman=true, isValid=true");
+            Debug.Log($"[RuinGuarder] Avatar OK — isHuman={avatar.isHuman}, isValid={avatar.isValid}");
 
-        BuildPrefab(avatar);
+        var data = EnsureDataAsset();
+        BuildPrefab(avatar, data);
+        AssetDatabase.Refresh();   // ensure prefab is indexed before PlaceInScene reads it
         PlaceInScene();
         BakeNavMesh();
 
         AssetDatabase.SaveAssets();
         EditorSceneManager.SaveOpenScenes();
-        Debug.Log("[RuinGuarder] Setup complete. Check Console for avatar status.");
+        Debug.Log("[RuinGuarder] Setup complete.");
     }
 
-    private static void BuildPrefab(Avatar avatar)
+    // ─────────────────────────────────────────────────────────────────
+    // Prefab building
+    // Architecture:
+    //   RuinGuarder  (empty root — all gameplay components here)
+    //   └── Visual    (FBX model — Animator + mesh + skeleton)
+    //
+    // Adding components to a plain new GameObject avoids all FBX
+    // prefab-connection restrictions that caused MissingComponentException.
+    // ─────────────────────────────────────────────────────────────────
+    private static void BuildPrefab(Avatar avatar, RuinGuarderData data)
     {
-        var fbxRoot = AssetDatabase.LoadAssetAtPath<GameObject>(FbxPath);
-        if (fbxRoot == null) { Debug.LogError("[RuinGuarder] FBX not found"); return; }
+        var fbxAsset = AssetDatabase.LoadAssetAtPath<GameObject>(FbxPath);
+        if (fbxAsset == null)
+        {
+            Debug.LogError("[RuinGuarder] FBX not found at: " + FbxPath);
+            return;
+        }
 
         var ctrl = AssetDatabase.LoadAssetAtPath<RuntimeAnimatorController>(ControllerPath);
-        if (ctrl == null) { Debug.LogError("[RuinGuarder] Controller not found: " + ControllerPath); return; }
+        if (ctrl == null)
+            Debug.LogWarning("[RuinGuarder] Animator Controller not found: " + ControllerPath +
+                             " — assign manually after setup.");
 
         var mat = AssetDatabase.LoadAssetAtPath<Material>(MatPath);
+        if (mat == null)
+            Debug.LogWarning("[RuinGuarder] Material not found: " + MatPath);
 
-        GameObject go = Object.Instantiate(fbxRoot);
-        go.name = "RuinGuarder";
+        // ── 1. Empty root (all gameplay components go here) ───────────
+        var root = new GameObject(RootName);
 
-        // Warstwy
+        // ── 2. FBX visual as child ────────────────────────────────────
+        var visual = (GameObject)Object.Instantiate(fbxAsset);
+        visual.name = "Visual";
+        visual.transform.SetParent(root.transform, false);
+        RemoveBlenderArtifacts(visual);
+
+        // ── 3. Layers ─────────────────────────────────────────────────
         int enemyLayer = LayerMask.NameToLayer("Enemy");
         if (enemyLayer < 0) enemyLayer = 0;
-        foreach (Transform t in go.GetComponentsInChildren<Transform>(true))
+        foreach (Transform t in root.GetComponentsInChildren<Transform>(true))
             t.gameObject.layer = enemyLayer;
 
-        // Materiał
+        // ── 4. Animator (lives on the visual child) ───────────────────
+        var anim = visual.GetComponentInChildren<Animator>(true);
+        if (anim == null)
+        {
+            anim = visual.AddComponent<Animator>();
+            Debug.Log("[RuinGuarder] Added Animator to Visual child.");
+        }
+        if (ctrl  != null) anim.runtimeAnimatorController = ctrl;
+        if (avatar != null) anim.avatar = avatar;
+        anim.applyRootMotion = false;
+
+        // ── 5. Material ───────────────────────────────────────────────
         if (mat != null)
         {
-            foreach (var smr in go.GetComponentsInChildren<SkinnedMeshRenderer>(true))
+            foreach (var smr in visual.GetComponentsInChildren<SkinnedMeshRenderer>(true))
                 smr.sharedMaterials = Enumerable.Repeat(mat, smr.sharedMaterials.Length).ToArray();
-            foreach (var mr in go.GetComponentsInChildren<MeshRenderer>(true))
+            foreach (var mr in visual.GetComponentsInChildren<MeshRenderer>(true))
                 mr.sharedMaterials = Enumerable.Repeat(mat, mr.sharedMaterials.Length).ToArray();
         }
 
-        // Animator
-        var anim = go.GetComponent<Animator>() ?? go.AddComponent<Animator>();
-        anim.runtimeAnimatorController = ctrl;
-        anim.applyRootMotion            = false;
-        if (avatar != null) anim.avatar = avatar;
-
-        // CapsuleCollider
-        var col = go.GetComponent<CapsuleCollider>() ?? go.AddComponent<CapsuleCollider>();
-        col.center = new Vector3(0f, 0.9f, 0f);
-        col.radius = 0.3f;
-        col.height = 1.8f;
+        // ── 6. CapsuleCollider on root ────────────────────────────────
+        var col = root.AddComponent<CapsuleCollider>();
+        col.center    = new Vector3(0f, 0.9f, 0f);
+        col.radius    = 0.3f;
+        col.height    = 1.8f;
         col.direction = 1;
 
-        // NavMeshAgent
-        var agent = go.GetComponent<NavMeshAgent>() ?? go.AddComponent<NavMeshAgent>();
+        // ── 7. NavMeshAgent on root ───────────────────────────────────
+        var agent = root.AddComponent<NavMeshAgent>();
         agent.speed            = 3.5f;
         agent.angularSpeed     = 360f;
         agent.stoppingDistance = 1.5f;
@@ -91,42 +120,46 @@ public static class RuinGuarderFullSetup
         agent.radius           = 0.3f;
         agent.height           = 1.8f;
 
-        // EnemyStats
-        var stats = go.GetComponent<EnemyStats>() ?? go.AddComponent<EnemyStats>();
-        stats.maxHP       = 200f;
-        stats.defence     = 10f;
-        stats.meleeDamage = 20f;
+        // ── 8. EnemyStats on root ─────────────────────────────────────
+        root.AddComponent<EnemyStats>();
 
-        // RuinGuarder1AI
-        var ai = go.GetComponent<RuinGuarder1AI>() ?? go.AddComponent<RuinGuarder1AI>();
-        var so = new SerializedObject(ai);
-        so.FindProperty("animator").objectReferenceValue = anim;
-        int playerLayerIdx = LayerMask.NameToLayer("Player");
-        if (playerLayerIdx >= 0)
-            so.FindProperty("playerLayer").intValue = 1 << playerLayerIdx;
-        so.ApplyModifiedProperties();
+        // ── 9. RuinGuarderAI on root — wire animator + data ──────────
+        var ai   = root.AddComponent<RuinGuarderAI>();
+        var aiSo = new SerializedObject(ai);
+        aiSo.FindProperty("animator").objectReferenceValue = anim;
+        aiSo.FindProperty("data").objectReferenceValue     = data;
+        aiSo.ApplyModifiedProperties();
 
-        // Zapis prefabu
+        // ── 10. Save prefab ───────────────────────────────────────────
         if (AssetDatabase.LoadAssetAtPath<GameObject>(PrefabPath) != null)
             AssetDatabase.DeleteAsset(PrefabPath);
 
-        PrefabUtility.SaveAsPrefabAsset(go, PrefabPath);
-        Object.DestroyImmediate(go);
+        Selection.activeGameObject = null;   // deselect before destroy to avoid Inspector errors
+        PrefabUtility.SaveAsPrefabAsset(root, PrefabPath);
+        Object.DestroyImmediate(root);
         Debug.Log("[RuinGuarder] Prefab saved: " + PrefabPath);
     }
 
     private static void PlaceInScene()
     {
+        // Remove any existing RuinGuarder instances.
+        Selection.activeGameObject = null;   // deselect before destroy
         foreach (var old in Object.FindObjectsByType<GameObject>(
             FindObjectsInactive.Include, FindObjectsSortMode.None))
         {
-            if (old.name.StartsWith("RuinGuarder"))
+            if (old.name == RootName && old.transform.parent == null)
                 Object.DestroyImmediate(old);
         }
 
         var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(PrefabPath);
-        if (prefab == null) { Debug.LogError("[RuinGuarder] Prefab missing."); return; }
+        if (prefab == null)
+        {
+            Debug.LogError("[RuinGuarder] Prefab not found at: " + PrefabPath +
+                           "\nCheck that BuildPrefab completed without errors.");
+            return;
+        }
 
+        Debug.Log("[RuinGuarder] Prefab loaded OK — instantiating in scene.");
         var instance = (GameObject)PrefabUtility.InstantiatePrefab(prefab);
         instance.transform.position = new Vector3(3f, 0f, 3f);
         instance.transform.rotation = Quaternion.identity;
@@ -135,22 +168,61 @@ public static class RuinGuarderFullSetup
         if (parent != null) instance.transform.SetParent(parent.transform);
 
         EditorSceneManager.MarkSceneDirty(instance.scene);
-        Debug.Log("[RuinGuarder] Placed in scene at (3,0,3).");
+        Debug.Log("[RuinGuarder] Placed in scene at (3, 0, 3).");
+    }
+
+    private static RuinGuarderData EnsureDataAsset()
+    {
+        var existing = AssetDatabase.LoadAssetAtPath<RuinGuarderData>(DataPath);
+        if (existing != null) return existing;
+
+        Directory.CreateDirectory(
+            Path.GetDirectoryName(Path.Combine(Application.dataPath, "..", DataPath)));
+
+        var asset = ScriptableObject.CreateInstance<RuinGuarderData>();
+        AssetDatabase.CreateAsset(asset, DataPath);
+        AssetDatabase.SaveAssets();
+        Debug.Log("[RuinGuarder] Created RuinGuarderData at " + DataPath);
+        return asset;
+    }
+
+    private static void RemoveBlenderArtifacts(GameObject root)
+    {
+        var toDelete = new System.Collections.Generic.List<GameObject>();
+
+        foreach (Transform t in root.GetComponentsInChildren<Transform>(true))
+        {
+            if (t == root.transform) continue;
+
+            // Only remove genuine Blender scene objects — never touch meshes.
+            if (t.GetComponent<Camera>() != null || t.GetComponent<Light>() != null)
+                toDelete.Add(t.gameObject);
+        }
+
+        foreach (var obj in toDelete)
+        {
+            Debug.Log($"[RuinGuarder] Removed Blender artifact: {obj.name}");
+            Object.DestroyImmediate(obj);
+        }
     }
 
     private static void BakeNavMesh()
     {
-        foreach (var r in Object.FindObjectsByType<MeshRenderer>(
-            FindObjectsInactive.Include, FindObjectsSortMode.None))
+        // Try modern NavMeshSurface (AI Navigation package) first.
+        var surfaces = Object.FindObjectsByType<Unity.AI.Navigation.NavMeshSurface>(
+            FindObjectsInactive.Include, FindObjectsSortMode.None);
+
+        if (surfaces.Length > 0)
         {
-            var flags = GameObjectUtility.GetStaticEditorFlags(r.gameObject);
-            if ((flags & StaticEditorFlags.NavigationStatic) == 0)
-                GameObjectUtility.SetStaticEditorFlags(r.gameObject,
-                    flags | StaticEditorFlags.NavigationStatic);
+            foreach (var s in surfaces)
+                s.BuildNavMesh();
+            Debug.Log($"[RuinGuarder] NavMesh baked via {surfaces.Length} NavMeshSurface(s).");
         }
-#pragma warning disable CS0618
-        UnityEditor.AI.NavMeshBuilder.BuildNavMesh();
-#pragma warning restore CS0618
-        Debug.Log("[RuinGuarder] NavMesh baked.");
+        else
+        {
+            Debug.LogWarning("[RuinGuarder] No NavMeshSurface found in scene. " +
+                             "Add a NavMeshSurface component and bake manually, " +
+                             "or add one so this tool can bake automatically.");
+        }
     }
 }

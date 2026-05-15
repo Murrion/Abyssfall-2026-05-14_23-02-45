@@ -19,6 +19,14 @@ public class EnemyStats : MonoBehaviour
         CurrentHP = maxHP;
     }
 
+    /// Lets an AI script apply ScriptableObject values after all Awakes have run.
+    public void Initialize(float newMaxHP, float newDefence)
+    {
+        maxHP     = newMaxHP;
+        defence   = newDefence;
+        CurrentHP = maxHP;
+    }
+
     public void TakeDamage(float rawAmount, float damageReduction = 0f)
     {
         if (IsDead)

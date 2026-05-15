@@ -154,7 +154,7 @@ public class PlayerMovement : MonoBehaviour
     private Vector2 moveInput;
     private bool isArmed;
     private bool previousIsArmed;
-    private bool lockIsEquipOrDisarm;
+
     private float animationLockedUntil;
     private float attackLockedUntil;
     private bool isPlayingUpperBodyAttack;
@@ -533,8 +533,7 @@ public class PlayerMovement : MonoBehaviour
             bool done = isEquippingReverse ? (currentEquipNT <= 0.05f) : (currentEquipNT >= 0.95f);
             if (done)
             {
-                isEquipping         = false;
-                lockIsEquipOrDisarm = false;
+                isEquipping = false;
             }
         }
 
@@ -669,9 +668,8 @@ public class PlayerMovement : MonoBehaviour
 
     private bool ToggleWeaponState()
     {
-        previousIsArmed     = isArmed;
-        isArmed             = !isArmed;
-        lockIsEquipOrDisarm = true;
+        previousIsArmed = isArmed;
+        isArmed         = !isArmed;
 
         // Disarm = equip animation played backwards; equip = forward
         return PlayEquipAnimation(equipStates, ref nextEquipIndex, reverse: previousIsArmed);
@@ -700,9 +698,8 @@ public class PlayerMovement : MonoBehaviour
     private void CancelEquip()
     {
         if (!isEquipping) return;
-        isArmed             = previousIsArmed;
-        isEquipping         = false;
-        lockIsEquipOrDisarm = false;
+        isArmed     = previousIsArmed;
+        isEquipping = false;
     }
 
     private AnimationState GetEquipWalkState() =>
@@ -973,8 +970,8 @@ public class PlayerMovement : MonoBehaviour
             if (enemy == null || enemy.IsDead)
                 continue;
 
-            RuinGuarder1AI ai = hit.GetComponentInParent<RuinGuarder1AI>() ?? hit.GetComponent<RuinGuarder1AI>();
-            float reduction = ai != null ? damage * (1f - ai.BlockDamageMultiplier) : 0f;
+            IBlockable blockable = hit.GetComponentInParent<IBlockable>() ?? hit.GetComponent<IBlockable>();
+            float reduction = blockable != null ? damage * (1f - blockable.BlockDamageMultiplier) : 0f;
             enemy.TakeDamage(damage, reduction);
         }
     }

@@ -1,21 +1,26 @@
 using UnityEngine;
 using UnityEngine.AI;
 
+/// Generic enemy AI for simple mobs that don't warrant a dedicated script.
+/// States: Idle → Patrol → Chase → Attack
+/// Damage is read from EnemyStats.meleeDamage and applied via PlayerStats.TakeDamage.
 [RequireComponent(typeof(NavMeshAgent))]
-public class EnemyAI : MonoBehaviour
+[RequireComponent(typeof(EnemyStats))]
+public class EnemyAI : EnemyBase
 {
     public enum State { Idle, Patrol, Chase, Attack }
 
+    // ─── Inspector ────────────────────────────────────────────────────
+
     [Header("Detection")]
-    public float detectionRange  = 10f;
-    public float attackRange     = 2f;
+    public float detectionRange = 10f;
+    public float attackRange    = 2f;
     [Range(0f, 360f)]
-    public float fieldOfView     = 120f;
-    public LayerMask sightMask   = -1;
+    public float fieldOfView    = 120f;
 
     [Header("Movement")]
-    public float patrolSpeed     = 2f;
-    public float chaseSpeed      = 4f;
+    public float patrolSpeed = 2f;
+    public float chaseSpeed  = 4f;
 
     [Header("Patrol")]
     public Transform[] waypoints;
@@ -23,22 +28,17 @@ public class EnemyAI : MonoBehaviour
     public float waypointIdleTime  = 1.5f;
 
     [Header("Attack")]
-    public float attackCooldown  = 2f;
-    public float attackDamage    = 20f;
-    public float attackHitDelay  = 0.4f;
+    public float attackCooldown = 2f;
+    public float attackHitDelay = 0.4f;
 
     [Header("Chase")]
     public float loseTargetDelay = 3f;
 
-    [Header("Animation")]
-    [SerializeField] private Animator animator;
+    [Header("Animator Params")]
     [SerializeField] private string speedParam  = "Speed";
     [SerializeField] private string attackParam = "Attack";
 
-    // ── Runtime ──────────────────────────────────────────────────
-    private NavMeshAgent agent;
-    private Transform    player;
-    private PlayerStats  playerStats;
+    // ─── Runtime ──────────────────────────────────────────────────────
 
     private State currentState;
     private int   waypointIndex;
@@ -47,22 +47,11 @@ public class EnemyAI : MonoBehaviour
     private float attackTimer;
     private bool  isAttacking;
 
-    // ─────────────────────────────────────────────────────────────
+    // ─── Unity ───────────────────────────────────────────────────────
 
-    private void Awake()
+    protected override void Awake()
     {
-        agent = GetComponent<NavMeshAgent>();
-
-        PlayerMovement pm = FindFirstObjectByType<PlayerMovement>();
-        if (pm != null)
-        {
-            player      = pm.transform;
-            playerStats = pm.GetComponent<PlayerStats>()
-                       ?? pm.GetComponentInChildren<PlayerStats>();
-        }
-
-        if (animator == null)
-            animator = GetComponentInChildren<Animator>();
+        base.Awake();
     }
 
     private void Start()
@@ -76,7 +65,7 @@ public class EnemyAI : MonoBehaviour
         UpdateAnimation();
     }
 
-    // ── FSM ───────────────────────────────────────────────────────
+    // ─── FSM ─────────────────────────────────────────────────────────
 
     private void UpdateFSM()
     {
@@ -104,7 +93,7 @@ public class EnemyAI : MonoBehaviour
             case State.Chase:
                 if (player == null) { SetState(State.Patrol); return; }
 
-                if (Vector3.Distance(transform.position, player.position) <= attackRange)
+                if (DistToPlayer() <= attackRange)
                 {
                     SetState(State.Attack);
                     return;
@@ -112,7 +101,10 @@ public class EnemyAI : MonoBehaviour
 
                 agent.SetDestination(player.position);
 
-                loseTimer = CanSeePlayer() ? loseTargetDelay : loseTimer - Time.deltaTime;
+                loseTimer = CanSeePlayer(detectionRange, fieldOfView)
+                    ? loseTargetDelay
+                    : loseTimer - Time.deltaTime;
+
                 if (loseTimer <= 0f)
                     SetState(State.Patrol);
                 break;
@@ -122,7 +114,7 @@ public class EnemyAI : MonoBehaviour
 
                 FacePlayer();
 
-                if (Vector3.Distance(transform.position, player.position) > attackRange * 1.2f)
+                if (DistToPlayer() > attackRange * 1.2f)
                 {
                     SetState(State.Chase);
                     return;
@@ -137,32 +129,14 @@ public class EnemyAI : MonoBehaviour
 
     private void TryDetectPlayer()
     {
-        if (CanSeePlayer())
+        if (CanSeePlayer(detectionRange, fieldOfView))
         {
             loseTimer = loseTargetDelay;
             SetState(State.Chase);
         }
     }
 
-    private bool CanSeePlayer()
-    {
-        if (player == null) return false;
-
-        Vector3 toPlayer = player.position - transform.position;
-        float   dist     = toPlayer.magnitude;
-
-        if (dist > detectionRange) return false;
-        if (Vector3.Angle(transform.forward, toPlayer) > fieldOfView * 0.5f) return false;
-
-        // Line of sight
-        Vector3 origin = transform.position + Vector3.up;
-        if (Physics.Raycast(origin, toPlayer.normalized, dist, ~sightMask))
-            return false;
-
-        return true;
-    }
-
-    // ── State Transitions ─────────────────────────────────────────
+    // ─── State transitions ────────────────────────────────────────────
 
     private void SetState(State next)
     {
@@ -198,7 +172,7 @@ public class EnemyAI : MonoBehaviour
         waypointIndex = (waypointIndex + 1) % waypoints.Length;
     }
 
-    // ── Combat ────────────────────────────────────────────────────
+    // ─── Combat ──────────────────────────────────────────────────────
 
     private void PerformAttack()
     {
@@ -208,31 +182,38 @@ public class EnemyAI : MonoBehaviour
         if (animator != null)
             animator.SetTrigger(attackParam);
 
-        Invoke(nameof(ApplyDamage),    attackHitDelay);
-        Invoke(nameof(FinishAttack),   attackCooldown * 0.5f);
+        Invoke(nameof(ApplyDamage),  attackHitDelay);
+        Invoke(nameof(FinishAttack), attackCooldown * 0.5f);
     }
 
     private void ApplyDamage()
     {
         if (player == null) return;
-        if (Vector3.Distance(transform.position, player.position) > attackRange * 1.5f) return;
+        if (DistToPlayer() > attackRange * 1.5f) return;
 
-        if (playerStats != null)
-            playerStats.currentHp = Mathf.Max(0f, playerStats.currentHp - attackDamage);
+        DealDamageToPlayer(stats.meleeDamage);
     }
 
     private void FinishAttack() => isAttacking = false;
 
-    // ── Helpers ───────────────────────────────────────────────────
+    // ─── EnemyBase overrides ─────────────────────────────────────────
 
-    private void FacePlayer()
+    protected override void HandleDamageTaken(float amount)
     {
-        Vector3 dir = player.position - transform.position;
-        dir.y = 0f;
-        if (dir != Vector3.zero)
-            transform.rotation = Quaternion.Slerp(
-                transform.rotation, Quaternion.LookRotation(dir), 10f * Time.deltaTime);
+        // Generic enemies have no TakeDamage state; FSM continues uninterrupted.
     }
+
+    protected override void HandleDeath()
+    {
+        CancelInvoke();
+        agent.enabled = false;
+        enabled       = false;
+
+        Collider col = GetComponent<Collider>();
+        if (col != null) col.enabled = false;
+    }
+
+    // ─── Animation ───────────────────────────────────────────────────
 
     private void UpdateAnimation()
     {
@@ -241,7 +222,7 @@ public class EnemyAI : MonoBehaviour
         animator.SetFloat(speedParam, speed, 0.1f, Time.deltaTime);
     }
 
-    // ── Gizmos ────────────────────────────────────────────────────
+    // ─── Gizmos ──────────────────────────────────────────────────────
 
     private void OnDrawGizmosSelected()
     {
